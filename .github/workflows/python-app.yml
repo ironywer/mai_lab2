@@ -5,12 +5,12 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "development"]
+    branches: [ "main", "development", "release"]
   pull_request:
     branches: [ "main" ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -35,6 +35,34 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
+      run: |
+        pytest --junitxml=pytest-results.xml -q
+    - name: Build documentation
+      run: |
+        pip install mkdocs mkdocs-material
+        mkdocs build --strict
+    - name: Upload pytest results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-results
+        path: ./pytest-results.xml
+    - name: Create release tag
+      if: startsWith(github.ref, 'refs/heads/release')
       env:
-        PYTHONPATH: ${{ github.workspace }}
-      run: pytest -q
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if [ ! -f VERSION ]; then
+          echo "VERSION file not found"; exit 1
+        fi
+        VERSION=$(tr -d ' \n' < VERSION)
+        TAG="v${VERSION}"
+        git fetch --tags
+        if git rev-parse "$TAG" >/dev/null 2>&1; then
+          echo "Tag $TAG already exists"
+        else
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$TAG"
+        fi
