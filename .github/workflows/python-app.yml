@@ -10,7 +10,7 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -49,13 +49,20 @@ jobs:
         path: ./pytest-results.xml
     - name: Create release tag
       if: startsWith(github.ref, 'refs/heads/release')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        VERSION=$(cat VERSION)
+        if [ ! -f VERSION ]; then
+          echo "VERSION file not found"; exit 1
+        fi
+        VERSION=$(tr -d ' \n' < VERSION)
         TAG="v${VERSION}"
         git fetch --tags
         if git rev-parse "$TAG" >/dev/null 2>&1; then
           echo "Tag $TAG already exists"
         else
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "$TAG"
-          git push origin "$TAG"
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} "$TAG"
         fi
