@@ -36,4 +36,26 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest
+        pytest --junitxml=pytest-results.xml -q
+    - name: Build documentation
+      run: |
+        pip install mkdocs mkdocs-material
+        mkdocs build --strict
+    - name: Upload pytest results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-results
+        path: ./pytest-results.xml
+    - name: Create release tag
+      if: startsWith(github.ref, 'refs/heads/release')
+      run: |
+        VERSION=$(cat VERSION)
+        TAG="v${VERSION}"
+        git fetch --tags
+        if git rev-parse "$TAG" >/dev/null 2>&1; then
+          echo "Tag $TAG already exists"
+        else
+          git tag "$TAG"
+          git push origin "$TAG"
+        fi
