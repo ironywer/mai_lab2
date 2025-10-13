@@ -1,0 +1,12 @@
+site_name: MAI Lab 2
+site_description: CI/CD учебный проект
+site_url: https://ironywer.github.io/mai_lab2/
+repo_url: https://github.com/ironywer/mai_lab2
+theme:
+  name: material
+  language: ru
+nav:
+  - Главная: index.md
+  - Руководство:
+      - Быстрый старт: guide/start.md
+      - CI/CD: guide/ci_cd.md
