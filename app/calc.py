@@ -1,5 +1,7 @@
 from typing import Iterable
 
+
+# Математическая библиотека
 def add(a: float, b: float) -> float:
     return a + b
 
